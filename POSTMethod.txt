@@ -1,0 +1,71 @@
+     h DFTACTGRP(*NO) ACTGRP(*NEW) BNDDIR('SHREYA/WEBSRC')
+      *Procedure for getting environment variables
+     DGetEnv           pr              *   extproc('getenv')
+     Dvar                              *   value  Options(*string)
+      *External Procedure for writing data into browser
+     DWriteout         pr                  extproc('QtmhWrStout')
+     Ddatavar                     65535A   Options(*varsize)
+     Ddatalen                        10I 0 const
+     Derrcd                        8000A   Options(*Varsize)
+
+     Derror            ds                  qualified
+     D BytesProv                     10I 0 Inz(0)
+     D BytesAvail                    10I 0 Inz(0)
+      *Standard Error Data Structure
+       /COPY QSYSINC/QRPGLESRC,QUSEC
+      *Procedure for reading standard input (payload)
+     DReadStdInput     pr                  extproc('QtmhRdStin')
+     D szRtnBuffer                65535A   Options(*varsize)
+     D nBufLen                       10I 0 const
+     D nRtnLen                       10I 0
+     D QUSEC                               like(QUSEC)
+      *Procedure to convert from ASCII to EBCDIC
+     DConvertApi       pr                  extpgm('QDCXLATE')
+     dlength                          5p 0 const
+     ddata                        32766a   Options(*varsize)
+     dtable                          10A   const
+      * Local Variables
+     DCRLF             C                   x'0d25'
+     Ddata             s           5000a
+     DURL              s           1000a
+     DReqMethod        s           1000a
+     DContentType      s           1000a
+     DEBCData          s           1000a
+     D RtnBuffer       s           4096A   inz
+     D RtnLen          s             10I 0
+     D apiError        ds                  likeds(QUSEC) inz
+
+      /free
+      * Setting up content type
+           data = 'Content-type: Text/plain' + CRLF + CRLF ;
+           writeout(data:%len(%trim(data)):error);
+           data = 'Welcome to My World.'+ CRLF ;
+           writeout(data:%len(%trim(data)):error);
+
+      * Retrieve environment variables
+           URL = %Str(GetEnv('REQUEST_URI'));
+           ReqMethod = %Str(GetEnv('REQUEST_METHOD'));
+
+           If ReqMethod = 'POST';
+               ContentType = %Str(GetEnv('CONTENT_TYPE'));
+               ReadStdInput(RtnBuffer: %size(RtnBuffer): RtnLen: apiError);
+               IF ContentType = 'application/json';
+                 EBCData = %Trim(rtnBuffer);
+                 ConvertApi(%len(%Trim(EBCData)): EBCData: 'QTCPEBC');
+               endif;
+           EndIf;
+
+      * Write more response to browser
+           Data = 'URL:' + %trim(URL) + CRLF   +
+           'Req Method:' + %trim(ReqMethod) + CRLF   +
+           'Contenttype:' + %trim(ContentType) + CRLF ;
+           writeout(data:%len(%trim(data)):error);
+
+           Data = 'Data:' + %trim(RtnBuffer) + CRLF ;
+           Writeout(Data : %len(%Trim(Data)): Error);
+
+           Data = 'Converted Data:' + %trim(EBCData) ;
+           Writeout(Data : %len(%Trim(Data)): Error);
+
+           *inlr = *on;
+      /End-free
