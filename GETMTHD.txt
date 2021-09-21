@@ -1,0 +1,51 @@
+     h DFTACTGRP(*NO) ACTGRP(*NEW) BNDDIR('SHREYA/WEBSRC')
+      * File Declaration
+     femppf     if   e           k disk
+      *Procedure Declaration
+     DGetEnv           pr              *   extproc('getenv')
+     Dvar                              *   value  Options(*string)
+
+     DWriteout         pr                  extproc('QtmhWrStout')
+     Ddatavar                     65535A   Options(*varsize)
+     Ddatalen                        10I 0 const
+     Derrcd                        8000A   Options(*Varsize)
+      * Error Data Structure
+     Derror            ds                  qualified
+     D BytesProv                     10I 0 Inz(0)
+     D BytesAvail                    10I 0 Inz(0)
+      *Local Variables
+     DCRLF             C                   x'0d25'
+     Ddata             s           5000a
+     DURL              s           1000a
+     Dpos              s             10i 0
+     Did               s                   like(empid) inz
+      * Main Program
+      /free
+           data = 'Content-type: Text/plain' + CRLF + CRLF ;
+           writeout(data:%len(%trim(data)):error);
+
+           URL = %Str(GetEnv('REQUEST_URI'));
+           pos = %scan('/getmthd/':URL) + %len('/getmthd/');
+
+           Monitor;
+              id = %int(%subst(URL:pos:3)) ;
+           on-error;
+              DATA = 'Invalid URI';
+              writeout(data:%len(%trim(data)):error);
+              return;
+           endmon;
+
+           DATA = 'Employee Details:' + CRLF ;
+           writeout(data:%len(%trim(data)):error);
+           Chain id  emprec;
+           If %found;
+              data = 'Employee Id = '+ %char(empid) + CRLF +
+                     'Employee Name = ' + empname;
+              writeout(data:%len(%trim(data)):error);
+           else;
+              data = 'Data Not found';
+              writeout(data:%len(%trim(data)):error);
+           endif;
+
+           *inlr = *on;
+      /End-free
