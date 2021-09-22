@@ -1,0 +1,29 @@
+     h dftactgrp(*no) actgrp(*caller)
+     DResponse         S           9999A
+     Dheader           S            200A
+     dURL              c                   'http://129.40.98.241:8010/ws/+
+     d                                      getmthd/6'
+       /FREE
+             Exec sql set option commit = *none;
+
+             Exec sql CALL QSYS2.QCMDEXC('CHGJOB CCSID(37)');
+
+              header =  '<httpHeader>'                                      +
+                             '<header name="Content-Type" value="text/plain">'+
+                           '</header>'                                      +
+                        '</httpHeader>';
+
+              Exec Sql
+              Select DATA into : Response from(values
+              char(SYSTOOLS.HTTPGETCLOB(:url,:header),4096))ws(DATA) ;
+              Exec Sql
+              Insert into Shreya/Getapipf  values(:Response);
+
+            if sqlcode = *zeros;
+             dsply ' Ok response';
+             else;
+             dsply 'Error';
+             endif;
+
+           *INLR = *ON;
+       /END-FREE

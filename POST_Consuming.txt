@@ -1,0 +1,34 @@
+     h dftactgrp(*no) actgrp(*caller)
+     DResponse         S           9999A
+     DBody             S           9999A
+     Dheader           S            200A
+     dURL              c                   'http://129.40.98.241:8010/ws/+
+     d                                      postmthd'
+       /FREE
+             Exec sql set option commit = *none;
+
+             Exec sql CALL QSYS2.QCMDEXC('CHGJOB CCSID(37)');
+
+              header =  '<httpHeader>'                                      +
+                             '<header name="Content-Type" value="text/plain">'+
+                           '</header>'                                      +
+                        '</httpHeader>';
+
+              Body = '{+
+                      "Id": 1,+
+                      "Name": "Shreya Wadhwani",+
+                     }';
+              Exec Sql
+              Select DATA into : Response from(values
+              char(SYSTOOLS.HTTPPOSTCLOB(:url,:header,:body),4096))ws(DATA) ;
+              Exec Sql
+              Insert into Shreya/Postapipf  values(:Response);
+
+            if sqlcode = *zeros;
+             dsply ' Ok response';
+             else;
+             dsply 'Error';
+             endif;
+
+           *INLR = *ON;
+       /END-FREE
