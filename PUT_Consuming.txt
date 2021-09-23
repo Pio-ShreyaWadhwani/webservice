@@ -1,0 +1,40 @@
+     DResponse         S           9999A
+     DresponseMsg      S            500A
+     DRheader          s            500A
+     DBody             S           1999A
+     Dheader           S            500A
+     dURL              s            500A
+     d
+      /free
+             URL ='https://gorest.co.in/public/v1/users/120';
+             Exec sql set option commit = *none;
+
+             Exec sql CALL QSYS2.QCMDEXC('CHGJOB CCSID(37)');
+
+              header = '<httpHeader>'+
+                       '<header name="Content-Type" value="application/json">'+
+                       '</header>'+
+                         '<header name="Authorization" value="Bearer '  +
+          '20563a04bfd75911f030f5b53649f6df5902da3cc578567b52d83f7fabda28e6">'+
+                       '</header></httpHeader>';
+              Body = '{"name":"Shreya",'+
+                     '"email":"allasani.peddana@15ce.com",'+
+                     '"gender":"female","status":"active"}';
+              Exec Sql
+              select coalesce(varChar(responseMsg,9999),' '),
+              varChar(responseHttpHeader,10000) into :responseMsg,:Rheader
+              from Table(Systools.HttpPutClobVerbose(:url,:header,:Body));
+
+              Exec Sql
+              Insert into Shreya/Getapipf  values(:responseMsg);
+
+               if sqlcode = *zeros;
+               dsply sqlcode;
+               else;
+               dsply 'Error';
+               dsply sqlcode;
+               endif;
+           
+
+              *inlr = *on;
+       /end-free
